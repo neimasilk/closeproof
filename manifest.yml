@@ -1,0 +1,167 @@
+modules:
+  jira:projectPage:
+    - key: closeproof-close-dashboard
+      resource: dashboard
+      resolver:
+        function: resolver
+      render: native
+      title: Month-end close
+      icon: resource:assets;icon.svg
+  jira:issuePanel:
+    - key: closeproof-reconciliation-panel
+      resource: panel
+      resolver:
+        function: resolver
+      render: native
+      title: Reconciliation
+      icon: resource:assets;icon.svg
+  rovo:agent:
+    - key: close-controller
+      name: Close Controller
+      description: Checks your month-end close in Jira. Finds which account reconciliations fail to tie out, roll forward, keep their evidence intact or have independent sign-off, and drafts the close memo.
+      icon: resource:assets;icon.svg
+      prompt: resource:prompts;close-controller.md
+      conversationStarters:
+        - What is blocking this month's close?
+        - Draft the close memo for the controller
+        - Explain the exceptions on this reconciliation
+      actions:
+        - get-close-status
+        - list-close-exceptions
+        - explain-reconciliation
+        - draft-close-memo
+      skills:
+        - month-end-close-review
+  rovo:skill:
+    - key: month-end-close-review
+      source:
+        dir: skills/month-end-close-review
+      dependencies:
+        tools:
+          - get-close-status
+          - list-close-exceptions
+          - explain-reconciliation
+          - draft-close-memo
+  rovo:mcp:
+    - key: closeproof-mcp
+      name: CloseProof
+      tools:
+        - get-close-status
+        - list-close-exceptions
+        - explain-reconciliation
+        - draft-close-memo
+  action:
+    - key: get-close-status
+      name: Get close status
+      function: fn-close-status
+      actionVerb: GET
+      description: |
+        Get the month-end close status for a Jira project and period: how many account reconciliations are draft, prepared, reviewed and clean, the open exceptions per account, and whether a close certificate exists.
+      inputs:
+        projectKey:
+          title: Project key
+          type: string
+          required: false
+          description: "Jira project key that holds the close, for example FIN. Leave empty to use the current project."
+        period:
+          title: Period
+          type: string
+          required: false
+          description: "Close period as YYYY-MM, for example 2026-10. Leave empty for the latest period with data."
+    - key: list-close-exceptions
+      name: List close exceptions
+      function: fn-close-exceptions
+      actionVerb: GET
+      description: |
+        List every control exception (C1 tie-out, C2 roll-forward, C3 segregation of duties, C4 evidence present, C5 evidence intact, C6 edits after sign-off, C7 stale items) that blocks or warns on the month-end close, blockers first.
+      inputs:
+        projectKey:
+          title: Project key
+          type: string
+          required: false
+          description: "Jira project key that holds the close, for example FIN. Leave empty to use the current project."
+        period:
+          title: Period
+          type: string
+          required: false
+          description: "Close period as YYYY-MM, for example 2026-10. Leave empty for the latest period with data."
+        verifyEvidence:
+          title: Verify evidence
+          type: boolean
+          required: false
+          description: "True to re-download every evidence file and compare its SHA-256 with the hash taken at attach time (slower)."
+    - key: explain-reconciliation
+      name: Explain reconciliation
+      function: fn-explain-rec
+      actionVerb: GET
+      description: |
+        Explain one account reconciliation: balances, reconciling items, unexplained difference, prior-period roll-forward, evidence hashes and their re-check, sign-offs and history. Identify it by Jira issue key, or by project, period and account code.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: false
+          description: "Jira issue key of the reconciliation, for example FIN-12. Leave empty when called from the issue."
+        projectKey:
+          title: Project key
+          type: string
+          required: false
+          description: "Jira project key, used with period and account when there is no issue key."
+        period:
+          title: Period
+          type: string
+          required: false
+          description: "Close period as YYYY-MM."
+        account:
+          title: Account code
+          type: string
+          required: false
+          description: "General ledger account code, for example 1010."
+    - key: draft-close-memo
+      name: Draft close memo
+      function: fn-close-memo
+      actionVerb: GET
+      description: |
+        Gather verified facts for the controller's month-end close memo (status, blockers with owners, warnings, clean accounts, certificate) after re-checking all evidence files.
+      inputs:
+        projectKey:
+          title: Project key
+          type: string
+          required: false
+          description: "Jira project key that holds the close, for example FIN. Leave empty to use the current project."
+        period:
+          title: Period
+          type: string
+          required: false
+          description: "Close period as YYYY-MM, for example 2026-10. Leave empty for the latest period with data."
+  function:
+    - key: resolver
+      handler: index.handler
+    - key: fn-close-status
+      handler: index.getCloseStatus
+    - key: fn-close-exceptions
+      handler: index.listCloseExceptions
+    - key: fn-explain-rec
+      handler: index.explainReconciliation
+    - key: fn-close-memo
+      handler: index.draftCloseMemo
+resources:
+  - key: dashboard
+    path: src/frontend/index.jsx
+  - key: panel
+    path: src/frontend/panel.jsx
+  - key: assets
+    path: static
+  - key: prompts
+    path: prompts
+permissions:
+  scopes:
+    - read:jira-work
+    - write:jira-work
+    - storage:app
+app:
+  runtime:
+    name: nodejs24.x
+    memoryMB: 256
+    architecture: arm64
+  id: ari:cloud:ecosystem::app/252bf6fd-e2e6-43b6-a07e-18b5ac80cf32
