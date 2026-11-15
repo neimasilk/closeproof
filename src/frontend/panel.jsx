@@ -66,13 +66,13 @@ const StartForm = ({ state, onStart, busy }) => {
 
 const App = () => {
   const [state, setState] = useState(null);
-  const [form, setForm] = useState(null);
+  const [formState, setFormState] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   const apply = useCallback((s) => {
     setState(s);
-    setForm(s.rec ? formFrom(s.rec) : null);
+    setFormState(s.rec ? formFrom(s.rec) : null);
   }, []);
 
   useEffect(() => {
@@ -107,6 +107,9 @@ const App = () => {
 
   const { rec, demoPeople, me } = state;
   const ev = rec.evaluation;
+  // The form may not be initialised yet on the first render after loading.
+  const form = formState ?? formFrom(rec);
+  const setForm = setFormState;
   const evidenceIds = new Set(rec.evidence.map((e) => e.attachmentId));
   const candidates = state.attachments.filter((a) => !evidenceIds.has(a.id));
   const setItem = (idx, key, value) =>
@@ -221,7 +224,7 @@ const App = () => {
           <Button appearance="primary" isDisabled={busy || !!rec.reviewedBy} onClick={() => run('prepare')}>
             Sign as preparer
           </Button>
-          <Button appearance="primary" isDisabled={busy || !rec.preparedBy || rec.preparedBy === me} onClick={() => run('review')}>
+          <Button appearance="primary" isDisabled={busy || !rec.preparedBy || rec.preparedBy === me || !!rec.reviewedBy} onClick={() => run('review')}>
             Sign as reviewer
           </Button>
           <Button appearance="subtle" isDisabled={busy || (!rec.preparedBy && !rec.reviewedBy)} onClick={() => run('reopen')}>

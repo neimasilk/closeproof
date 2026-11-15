@@ -139,7 +139,6 @@ const App = () => {
     <Stack space="space.300">
       <Inline spread="space-between" alignBlock="center" shouldWrap>
         <Stack space="space.050">
-          <Heading size="large">Month-end close</Heading>
           <Text>
             Evidence-checked account reconciliations for project {data.projectKey}. Amounts in {data.config.currency}.
           </Text>
