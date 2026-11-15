@@ -1,3 +1,8 @@
 node_modules/
+dist/
+/.forge/
+*.log
 .env
 *.env
+.DS_Store
+Thumbs.db
