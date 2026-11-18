@@ -86,8 +86,16 @@ resolver.define(
     await requireProjectAccess(projectKey, { write: true });
     const current = await store.getConfig(projectKey);
     const next = { ...current };
-    if (req.payload?.currency) next.currency = String(req.payload.currency).toUpperCase().slice(0, 3);
-    if (req.payload?.materiality !== undefined) next.materiality = parseAmount(String(req.payload.materiality), next.decimals).toString();
+    if (req.payload?.currency) {
+      const currency = String(req.payload.currency).trim().toUpperCase();
+      if (!/^[A-Z]{3}$/.test(currency)) throw new Error('Currency must be a 3-letter code such as USD or EUR');
+      next.currency = currency;
+    }
+    if (req.payload?.materiality !== undefined) {
+      const materiality = parseAmount(String(req.payload.materiality), next.decimals);
+      if (materiality < 0n) throw new Error('Materiality cannot be negative');
+      next.materiality = materiality.toString();
+    }
     if (req.payload?.staleDays !== undefined) next.staleDays = Math.max(1, Math.min(365, parseInt(req.payload.staleDays, 10) || 60));
     await store.setConfig(projectKey, next);
     return next;

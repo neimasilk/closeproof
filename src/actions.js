@@ -98,10 +98,14 @@ export const explainReconciliation = action(async (payload) => {
   let rec;
   const issueKey = String(payload.issueKey ?? payload?.context?.jira?.issueKey ?? '').trim().toUpperCase();
   if (issueKey) {
+    // Check access to the issue's project before saying anything about it,
+    // so the answer never reveals data from a project the user cannot browse.
+    await requireProjectAccess(store.assertProjectKey(issueKey.split('-')[0]));
     rec = await store.getRecByIssue(store.assertIssueKey(issueKey));
     if (!rec) return { error: `${issueKey} is not linked to a CloseProof reconciliation.` };
   } else {
     const projectKey = projectFrom(payload);
+    await requireProjectAccess(projectKey);
     const period = await periodFrom(payload, projectKey);
     if (!payload.account) return { error: 'Give an issue key, or a project, period and account code.' };
     rec = await store.getRec(projectKey, period, String(payload.account));

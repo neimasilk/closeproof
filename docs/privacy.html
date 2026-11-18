@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CloseProof for Jira: privacy policy</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<nav><a href="index.html">User guide</a><a href="privacy.html" aria-current="page">Privacy</a><a href="support.html">Support</a></nav>
+
+<h1>Privacy policy</h1>
+<p class="lead">CloseProof for Jira. Last updated 18 November 2026.</p>
+
+<h2>Summary</h2>
+<ul>
+<li>CloseProof runs entirely on Atlassian Forge. It makes <b>no calls to servers outside Atlassian</b> and uses no third-party services, analytics or trackers.</li>
+<li>Its data is stored in Forge app storage, which Atlassian hosts with your site.</li>
+<li>The developer of CloseProof has no access to your site, your Jira data or the app's stored data.</li>
+</ul>
+
+<h2>What the app stores</h2>
+<p>For each account reconciliation you create, CloseProof stores in Forge storage:</p>
+<ul>
+<li>the Jira project key, period, account code and account name, and the linked issue key;</li>
+<li>balances and reconciling items (descriptions, amounts, dates) that you enter;</li>
+<li>for each evidence file: the Jira attachment ID, file name, size, SHA-256 fingerprint, and who attached it and when (the file itself stays in Jira; CloseProof does not keep a copy);</li>
+<li>sign-offs and history: the Atlassian account IDs of the people who prepared, reviewed, edited or reopened the reconciliation, with timestamps and content hashes;</li>
+<li>project settings (currency code, materiality threshold, stale-item limit) and close certificates.</li>
+</ul>
+<p>Atlassian account IDs are the only personal data the app stores. It does not store names, email addresses or any other profile data.</p>
+
+<h2>What the app reads from Jira</h2>
+<p>CloseProof reads issues and downloads evidence attachments <b>as the signed-in user</b>, only to compute and re-check their SHA-256 fingerprints. Jira's own permissions apply: the app cannot read anything the user cannot read. When you click <i>Load demo close</i>, it creates demo issues and uploads small demo CSV files in the current project, also as you.</p>
+
+<h2>Rovo and MCP</h2>
+<p>If your site uses Rovo, the Close Controller agent and the CloseProof MCP tools return reconciliation facts (statuses, exceptions, amounts, issue keys) to the Rovo or MCP session of the user who asked, after checking that user's project permissions. Rovo is provided by Atlassian under Atlassian's terms; CloseProof does not send data anywhere else.</p>
+
+<h2>Retention and deletion</h2>
+<p>Data stays in Forge storage until you delete it. Removing the app from your site removes the app's storage under Atlassian's Forge data retention rules. Jira issues and attachments created by the demo are ordinary Jira content and can be deleted like any other issue.</p>
+
+<h2>Data residency and security</h2>
+<p>Forge storage is hosted by Atlassian and follows your site's data residency where Atlassian supports it for Forge apps. CloseProof does not add any storage or processing location of its own.</p>
+
+<h2>Contact</h2>
+<p>Questions or requests about this policy: open an issue on the <a href="support.html">support page</a>. Changes to this policy will be published on this page with a new date.</p>
+
+<footer>CloseProof for Jira · <a href="index.html">User guide</a> · <a href="support.html">Support</a></footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CloseProof for Jira: user guide</title>
+<meta name="description" content="Evidence-checked month-end close for finance teams, inside Jira.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<nav><a href="index.html" aria-current="page">User guide</a><a href="privacy.html">Privacy</a><a href="support.html">Support</a><a href="skill.md">MCP skill</a></nav>
+
+<h1>CloseProof for Jira</h1>
+<p class="lead">Evidence-checked month-end close for finance teams, inside Jira. See which account reconciliations are really done, and which only look done.</p>
+
+<h2>What CloseProof checks</h2>
+<p>Every account reconciliation is checked by seven deterministic controls each time you open the close. The Rovo agent explains the results; it never decides them.</p>
+<table>
+<tr><th>ID</th><th>Control</th><th>Raised when</th></tr>
+<tr><td>C1</td><td>Tie-out</td><td>GL balance − source balance − reconciling items is not exactly zero. A blocker above the materiality threshold, a warning below it.</td></tr>
+<tr><td>C2</td><td>Roll-forward</td><td>The prior period for the same account is not reviewed, or this period's opening balance differs from the prior period's reviewed closing balance.</td></tr>
+<tr><td>C3</td><td>Segregation of duties</td><td>The same person prepared and reviewed, the review has no preparer sign-off, or the review is dated before the preparation.</td></tr>
+<tr><td>C4</td><td>Evidence present</td><td>No supporting document is attached.</td></tr>
+<tr><td>C5</td><td>Evidence intact</td><td>An evidence file was deleted from the issue, replaced by a different file with the same name, or its SHA-256 no longer matches the hash taken when it was attached.</td></tr>
+<tr><td>C6</td><td>Changed after sign-off</td><td>Balances, items or evidence changed after the preparer or reviewer signed.</td></tr>
+<tr><td>C7</td><td>Stale items</td><td>A reconciling item is older than the stale-item limit (default 60 days) at the end of the period.</td></tr>
+</table>
+
+<h2>Quick start with the demo</h2>
+<ol>
+<li>Open a Jira project where you can create and edit issues.</li>
+<li>In the project sidebar, open <b>Month-end close</b> (under Apps).</li>
+<li>Click <b>Load demo close</b> (click it again any time to rebuild the demo). CloseProof creates eight reconciliation issues for last month, each with a small CSV statement attached, and plants one problem per control.</li>
+<li>Read the exceptions in the table. Click <b>Verify evidence</b> to re-download every evidence file and compare its SHA-256 with the hash stored at attach time.</li>
+<li>Open one of the issues and expand the <b>Reconciliation</b> panel (issue view, app actions) to see balances, evidence, sign-offs and history.</li>
+</ol>
+<p>The demo uses fictional people (for example "Dana Preparer"), so you can see the segregation-of-duties control without a second Jira user.</p>
+
+<h2>Working on a real close</h2>
+<h3>1. Create a reconciliation</h3>
+<p>Create one Jira issue per account (for example "1010 Operating bank account, October"). In its <b>Reconciliation</b> panel, enter the period (YYYY-MM), account code and name, then the balances:</p>
+<ul>
+<li><b>GL balance</b>: the general ledger closing balance.</li>
+<li><b>Source balance</b>: the independent balance, such as the bank statement or a sub-ledger.</li>
+<li><b>Opening (last month close)</b>: optional; when set, C2 compares it with last month's reviewed closing balance.</li>
+<li><b>Reconciling items</b>: timing differences and other explained items, each with an amount and the date it was opened.</li>
+</ul>
+<p>Amounts are stored as exact integers in minor units, so 0.01 differences are never lost to rounding.</p>
+
+<h3>2. Attach evidence</h3>
+<p>Attach the statement or schedule to the Jira issue as usual, then pick it in the panel's Evidence section. CloseProof downloads the file once and stores its SHA-256 fingerprint. If anyone later deletes, replaces or edits the file, C5 flags it.</p>
+
+<h3>3. Sign off</h3>
+<p>The preparer signs when C1, C2, C4 and C5 have no blockers. A different person then signs as reviewer. Each sign-off stores a hash of the reconciliation's content; if anything changes afterwards, C6 asks for a new sign-off. Use <b>Reopen</b> to withdraw sign-offs and rework a reconciliation. Every action is kept in the History section.</p>
+
+<h3>4. Close the period</h3>
+<p>When every reconciliation is reviewed with no blockers or warnings, the dashboard enables <b>Issue close certificate</b>. The certificate is a single SHA-256 over every reviewed reconciliation of the period. If a reviewed reconciliation changes later, the dashboard shows that the certificate is no longer valid.</p>
+
+<h2>Settings</h2>
+<p>Each project has its own currency code (default USD), materiality threshold (default 100.00) and stale-item limit (default 60 days).</p>
+
+<h2>Close Controller agent (Rovo)</h2>
+<p>If your site has Rovo, open Rovo chat and pick <b>Close Controller</b>. Try:</p>
+<ul>
+<li><i>What is blocking this month's close?</i></li>
+<li><i>Explain the exceptions on FIN-3</i></li>
+<li><i>Draft the close memo for the controller</i></li>
+</ul>
+<p>The agent calls four read-only actions (get close status, list close exceptions, explain reconciliation, draft close memo). It cannot sign, edit or delete anything, and it only sees projects you can browse.</p>
+
+<h2>MCP tools</h2>
+<p>The same four read-only tools are exposed through Atlassian's MCP server as <b>CloseProof</b>, so an MCP client connected to your Atlassian site can ask for close status or exceptions. An administrator must allow the app's tools to be exposed. See <a href="skill.md">skill.md</a> for how an agent should use them.</p>
+
+<h2>Permissions</h2>
+<p>All Jira calls run as the signed-in user. Reading the close requires <b>Browse projects</b>; editing, signing, loading the demo and issuing certificates require <b>Edit issues</b> in that project.</p>
+
+<footer>CloseProof for Jira · <a href="privacy.html">Privacy</a> · <a href="support.html">Support</a></footer>
+</main>
+</body>
+</html>

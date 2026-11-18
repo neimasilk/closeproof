@@ -22,8 +22,58 @@ import ForgeReconciler, {
   Tooltip,
   Badge,
   Code,
+  Label,
+  Textfield,
 } from '@forge/react';
 import { call, Person, StatusLozenge, ExceptionList, ErrorBox, CONTROL_HELP } from './common';
+
+/** Format a minor-unit integer string ("10000") as a decimal string ("100.00") without floats. */
+const fromMinor = (minor, decimals) => {
+  const neg = String(minor).startsWith('-');
+  const digits = String(minor).replace('-', '').padStart(decimals + 1, '0');
+  const whole = digits.slice(0, digits.length - decimals);
+  const frac = decimals ? `.${digits.slice(-decimals)}` : '';
+  return `${neg ? '-' : ''}${whole}${frac}`;
+};
+
+/**
+ * Per-project settings: currency label, materiality threshold (C1) and the
+ * stale-item limit in days (C7). Saving re-evaluates the whole period.
+ */
+const Settings = ({ config, busy, onSave }) => {
+  const [form, setForm] = useState({
+    currency: config.currency,
+    materiality: fromMinor(config.materiality, config.decimals),
+    staleDays: String(config.staleDays),
+  });
+  const field = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+  return (
+    <Stack space="space.100">
+      <Heading size="small">Project settings</Heading>
+      <Inline space="space.200" alignBlock="end" shouldWrap>
+        <Stack space="space.050">
+          <Label labelFor="cfg-currency">Currency code</Label>
+          <Textfield id="cfg-currency" width={90} value={form.currency} onChange={field('currency')} />
+        </Stack>
+        <Stack space="space.050">
+          <Label labelFor="cfg-materiality">Materiality (C1)</Label>
+          <Textfield id="cfg-materiality" width={140} value={form.materiality} onChange={field('materiality')} />
+        </Stack>
+        <Stack space="space.050">
+          <Label labelFor="cfg-stale">Stale after days (C7)</Label>
+          <Textfield id="cfg-stale" width={90} value={form.staleDays} onChange={field('staleDays')} />
+        </Stack>
+        <Button onClick={() => onSave(form)} isDisabled={!!busy}>
+          {busy === 'cfg' ? 'Saving...' : 'Save settings'}
+        </Button>
+      </Inline>
+      <Text>
+        An unexplained difference up to the materiality amount is a warning; above it, the reconciliation is blocked. Reconciling
+        items older than the stale limit at period end are flagged.
+      </Text>
+    </Stack>
+  );
+};
 
 const App = () => {
   const [data, setData] = useState(null);
@@ -77,6 +127,13 @@ const App = () => {
     run('verify', async () => {
       await load(period, true);
       setNotice('Every evidence file was downloaded again and its SHA-256 compared with the hash taken when it was attached.');
+    });
+
+  const saveSettings = (form) =>
+    run('cfg', async () => {
+      await call('saveConfig', form);
+      await load(period);
+      setNotice('Settings saved. Every reconciliation was checked again with the new limits.');
     });
 
   const certify = () =>
@@ -237,6 +294,8 @@ const App = () => {
           </Inline>
         ))}
       </Stack>
+
+      <Settings key={JSON.stringify(data.config)} config={data.config} busy={busy} onSave={saveSettings} />
     </Stack>
   );
 };
