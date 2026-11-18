@@ -257,13 +257,15 @@ export async function issueCertificate(projectKey, period, accountId) {
  */
 export async function importBalances(projectKey, period, rows, accountId) {
   const result = { created: [], updated: [], errors: [] };
-  let issueTypeId;
+  // One shared lookup of the issue type, even when several rows run at once.
+  let issueType;
   const one = async (r) => {
     try {
       let rec = await store.getRec(projectKey, period, r.account);
       const isNew = !rec;
       if (isNew) {
-        issueTypeId = issueTypeId ?? (await jira.pickIssueType(projectKey));
+        issueType = issueType ?? jira.pickIssueType(projectKey);
+        const issueTypeId = await issueType;
         const label = r.name ? `${r.account} ${r.name}` : r.account;
         const issueKey = await jira.createIssue(
           projectKey,
@@ -285,7 +287,8 @@ export async function importBalances(projectKey, period, rows, accountId) {
       result.errors.push({ line: r.line, message: `Account ${r.account}: ${e.message}` });
     }
   };
-  // The first row runs alone so the issue type is looked up once, then 5 at a time.
+  // The first row runs alone so the period is registered once (store.putRec
+  // updates the period index with a read-modify-write), then 5 at a time.
   const queue = [...rows];
   if (queue.length) await one(queue.shift());
   while (queue.length) await Promise.all(queue.splice(0, 5).map(one));

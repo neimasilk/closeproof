@@ -63,7 +63,7 @@ Requirements: Node.js 24 and the [Forge CLI](https://developer.atlassian.com/pla
 
 ```sh
 npm install
-node --test "test/*.test.js"     # unit tests for the controls, money and period helpers
+npm test     # unit tests (controls, money, period, CSV import) + import service test with mocked Forge APIs
 forge lint
 forge deploy -e development
 forge install --site <your-site>.atlassian.net --product jira -e development
