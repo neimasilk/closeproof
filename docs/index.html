@@ -38,8 +38,10 @@
 <p>The demo uses two fictional people, Priya Shah (Senior Accountant) and Marco Rossi (Controller), so you can see the segregation-of-duties control without a second Jira user.</p>
 
 <h2>Working on a real close</h2>
+<h3>Fastest start: import balances</h3>
+<p>On the <b>Month-end close</b> page, paste your trial balance or bank report into <b>Import balances</b>, header row first. Columns: <code>account</code>, <code>name</code>, <code>gl_balance</code>, <code>source_balance</code>, <code>opening_balance</code> (only account and gl_balance are required; common names such as "GL Balance" or "Bank Balance" also work). Tab-separated text pasted from Excel or Google Sheets, CSV and semicolon-separated files all work. Each new account gets its own Jira issue for evidence; accounts that already exist get their balances updated. Up to 50 accounts per import.</p>
 <h3>1. Create a reconciliation</h3>
-<p>Create one Jira issue per account (for example "1010 Operating bank account, October"). In its <b>Reconciliation</b> panel, enter the period (YYYY-MM), account code and name, then the balances:</p>
+<p>Or create one Jira issue per account (for example "1010 Operating bank account, October"). In its <b>Reconciliation</b> panel, enter the period (YYYY-MM), account code and name, then the balances:</p>
 <ul>
 <li><b>GL balance</b>: the general ledger closing balance.</li>
 <li><b>Source balance</b>: the independent balance, such as the bank statement or a sub-ledger.</li>

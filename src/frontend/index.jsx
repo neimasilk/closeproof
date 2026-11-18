@@ -24,6 +24,7 @@ import ForgeReconciler, {
   Code,
   Label,
   Textfield,
+  TextArea,
 } from '@forge/react';
 import { call, Person, StatusLozenge, ExceptionList, ErrorBox, CONTROL_HELP } from './common';
 
@@ -71,6 +72,39 @@ const Settings = ({ config, busy, onSave }) => {
         An unexplained difference up to the materiality amount is a warning; above it, the reconciliation is blocked. Reconciling
         items older than the stale limit at period end are flagged.
       </Text>
+    </Stack>
+  );
+};
+
+const IMPORT_EXAMPLE = ['account\tname\tgl_balance\tsource_balance', '1010\tOperating bank account\t184,500.00\t181,200.00'].join('\n');
+
+/**
+ * Paste balances from a spreadsheet (or a CSV export) to create or update the
+ * period's reconciliations in one go. New accounts get a Jira issue each.
+ */
+const ImportBalances = ({ period, busy, onImport }) => {
+  const [text, setText] = useState('');
+  return (
+    <Stack space="space.100">
+      <Heading size="small">Import balances</Heading>
+      <Text>
+        Paste a table from your trial balance or bank report, header row first. Columns: account, name, gl_balance,
+        source_balance, opening_balance (only account and gl_balance are required). Tab, comma and semicolon separators
+        work. New accounts get a Jira issue for their evidence; existing ones get their balances updated, and any reviewed
+        reconciliation that changes must be signed again (C6). Up to 50 accounts per import.
+      </Text>
+      <TextArea
+        id="import-text"
+        value={text}
+        placeholder={IMPORT_EXAMPLE}
+        onChange={(e) => setText(e.target.value)}
+        resize="vertical"
+      />
+      <Box>
+        <Button onClick={() => onImport(text)} isDisabled={!!busy || !text.trim()}>
+          {busy === 'import' ? 'Importing...' : `Import into ${period}`}
+        </Button>
+      </Box>
     </Stack>
   );
 };
@@ -134,6 +168,20 @@ const App = () => {
       await call('saveConfig', form);
       await load(period);
       setNotice('Settings saved. Every reconciliation was checked again with the new limits.');
+    });
+
+  const importBalances = (text) =>
+    run('import', async () => {
+      const r = await call('importBalances', { period, text });
+      const parts = [];
+      if (r.created.length) parts.push(`created ${r.created.length} (${r.created.map((x) => x.issueKey).join(', ')})`);
+      if (r.updated.length) parts.push(`updated ${r.updated.length}`);
+      const skipped = r.errors.map((e) => (e.line ? `line ${e.line}: ${e.message}` : e.message));
+      await load(r.period);
+      setNotice(
+        `Import into ${r.period}: ${parts.join(', ') || 'nothing imported'}.` +
+          (skipped.length ? ` Skipped ${skipped.length}: ${skipped.slice(0, 5).join('; ')}${skipped.length > 5 ? '; ...' : ''}` : ''),
+      );
     });
 
   const certify = () =>
@@ -294,6 +342,8 @@ const App = () => {
           </Inline>
         ))}
       </Stack>
+
+      <ImportBalances period={period} busy={busy} onImport={importBalances} />
 
       <Settings key={JSON.stringify(data.config)} config={data.config} busy={busy} onSave={saveSettings} />
     </Stack>

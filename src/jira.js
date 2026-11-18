@@ -71,7 +71,7 @@ export async function hashAttachment(attachmentId) {
 }
 
 /** First standard (non sub-task) issue type, preferring "Task". */
-async function pickIssueType(projectKey) {
+export async function pickIssueType(projectKey) {
   const res = await api
     .asUser()
     .requestJira(route`/rest/api/3/issue/createmeta/${projectKey}/issuetypes?maxResults=50`);
@@ -82,9 +82,12 @@ async function pickIssueType(projectKey) {
   return (types.find((t) => t.name === 'Task') ?? types[0]).id;
 }
 
-/** Create a plain issue and return its key. */
-export async function createIssue(projectKey, summary, description) {
-  const issueTypeId = await pickIssueType(projectKey);
+/**
+ * Create a plain issue and return its key.
+ * Pass issueTypeId when creating many issues, to look the type up only once.
+ */
+export async function createIssue(projectKey, summary, description, issueTypeId) {
+  issueTypeId = issueTypeId ?? (await pickIssueType(projectKey));
   const body = {
     fields: {
       project: { key: projectKey },

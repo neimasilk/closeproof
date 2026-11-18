@@ -248,6 +248,53 @@ export async function issueCertificate(projectKey, period, accountId) {
   return loadPeriod(projectKey, period);
 }
 
+/**
+ * Import balances parsed by lib/csv.js for one period.
+ * New accounts get a Jira issue (so evidence can be attached) and a draft
+ * reconciliation; existing ones get their balances updated. Sign-offs are kept,
+ * so control C6 flags any reviewed reconciliation whose balances changed.
+ * Issues are created a few at a time to stay inside the function time limit.
+ */
+export async function importBalances(projectKey, period, rows, accountId) {
+  const result = { created: [], updated: [], errors: [] };
+  let issueTypeId;
+  const one = async (r) => {
+    try {
+      let rec = await store.getRec(projectKey, period, r.account);
+      const isNew = !rec;
+      if (isNew) {
+        issueTypeId = issueTypeId ?? (await jira.pickIssueType(projectKey));
+        const label = r.name ? `${r.account} ${r.name}` : r.account;
+        const issueKey = await jira.createIssue(
+          projectKey,
+          `Reconcile ${label} (${period})`.slice(0, 250),
+          `Month-end reconciliation for account ${label}, period ${period}. Created by the CloseProof balance import. ` +
+            'Attach the bank statement or sub-ledger report to this issue, then complete the Reconciliation panel.',
+          issueTypeId,
+        );
+        rec = { projectKey, period, account: r.account, name: r.name ?? '', issueKey, items: [], evidence: [], history: [] };
+      }
+      if (r.name) rec.name = r.name;
+      rec.glBalance = r.glBalance.toString();
+      if (r.sourceBalance !== null && r.sourceBalance !== undefined) rec.sourceBalance = r.sourceBalance.toString();
+      if (r.openingBalance !== null && r.openingBalance !== undefined) rec.openingBalance = r.openingBalance.toString();
+      addHistory(rec, accountId, isNew ? 'created' : 'edited', 'balance import');
+      await store.putRec(rec);
+      (isNew ? result.created : result.updated).push({ account: r.account, issueKey: rec.issueKey ?? null });
+    } catch (e) {
+      result.errors.push({ line: r.line, message: `Account ${r.account}: ${e.message}` });
+    }
+  };
+  // The first row runs alone so the issue type is looked up once, then 5 at a time.
+  const queue = [...rows];
+  if (queue.length) await one(queue.shift());
+  while (queue.length) await Promise.all(queue.splice(0, 5).map(one));
+  const byAccount = (a, b) => a.account.localeCompare(b.account);
+  result.created.sort(byAccount);
+  result.updated.sort(byAccount);
+  return result;
+}
+
 /** Plain facts about open items, used by the Rovo agent and MCP tools. */
 export function exceptionsOf(data, { includeInfo = false } = {}) {
   const out = [];

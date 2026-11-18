@@ -16,7 +16,7 @@ All data stays on Atlassian (Forge storage, no external calls), so the app is el
 
 | Surface | What it does |
 |---|---|
-| **Month-end close** (Jira project page) | Period picker, progress bar, one row per account reconciliation with status, unexplained difference and exceptions. *Verify evidence* re-downloads every evidence file and re-hashes it. *Issue close certificate* is enabled only when every reconciliation is reviewed and clean. |
+| **Month-end close** (Jira project page) | Period picker, progress bar, one row per account reconciliation with status, unexplained difference and exceptions. *Import balances* creates or updates reconciliations from a pasted trial balance (one Jira issue per new account). *Verify evidence* re-downloads every evidence file and re-hashes it. *Issue close certificate* is enabled only when every reconciliation is reviewed and clean. |
 | **Reconciliation** (Jira issue panel) | Enter GL balance, source balance (bank or sub-ledger), opening balance and reconciling items. Pick supporting documents from the issue's attachments; CloseProof stores each file's SHA-256. Sign as preparer, then a different person signs as reviewer. Full history. |
 | **Close Controller** (Rovo agent) | Answers "What is blocking this month's close?", explains a reconciliation's exceptions and drafts the close memo from verified facts. The agent only explains; every rule is checked by deterministic code. |
 | **CloseProof MCP tools** | The same four read-only tools (`get-close-status`, `list-close-exceptions`, `explain-reconciliation`, `draft-close-memo`) for MCP clients connected to your Atlassian site. |
@@ -72,6 +72,7 @@ forge install --site <your-site>.atlassian.net --product jira -e development
 Code map:
 
 - `src/lib/controls.js`: the seven controls as pure functions (unit tested)
+- `src/lib/csv.js`: balance import parser (tab, comma or semicolon; unit tested)
 - `src/service.js`: business operations shared by the UI resolvers and the Rovo actions
 - `src/store.js`: Forge KVS data model
 - `src/jira.js`: Jira REST calls (asUser)

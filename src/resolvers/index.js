@@ -14,6 +14,7 @@ import { requireProjectAccess, listAttachments } from '../jira.js';
 import { seedDemo, resetPeriod, DEMO_PEOPLE } from '../demo.js';
 import { previousPeriod, assertPeriod } from '../lib/period.js';
 import { parseAmount } from '../lib/money.js';
+import { parseBalances } from '../lib/csv.js';
 import { logError } from '../lib/log.js';
 
 const resolver = new Resolver();
@@ -100,6 +101,24 @@ resolver.define(
     if (req.payload?.staleDays !== undefined) next.staleDays = Math.max(1, Math.min(365, parseInt(req.payload.staleDays, 10) || 60));
     await store.setConfig(projectKey, next);
     return next;
+  }),
+);
+
+resolver.define(
+  'importBalances',
+  safe(async (req) => {
+    const projectKey = projectOf(req);
+    await requireProjectAccess(projectKey, { write: true });
+    const period = assertPeriod(req.payload?.period);
+    const text = String(req.payload?.text ?? '');
+    if (text.length > 100000) throw new Error('The pasted table is too large; import at most 50 accounts at a time');
+    const cfg = await store.getConfig(projectKey);
+    const parsed = parseBalances(text, cfg.decimals);
+    const done = parsed.rows.length
+      ? await service.importBalances(projectKey, period, parsed.rows, me(req))
+      : { created: [], updated: [], errors: [] };
+    const errors = [...parsed.errors, ...done.errors].sort((a, b) => a.line - b.line);
+    return { period, created: done.created, updated: done.updated, errors };
   }),
 );
 
