@@ -11,6 +11,7 @@ import * as store from './store.js';
 import { requireProjectAccess } from './jira.js';
 import { DEMO_PEOPLE } from './demo.js';
 import { previousPeriod, isPeriod } from './lib/period.js';
+import { logError } from './lib/log.js';
 
 /** Inputs can come from the action inputs or from where Rovo was opened. */
 function projectFrom(payload) {
@@ -40,7 +41,7 @@ function action(fn) {
     try {
       return await fn(payload ?? {});
     } catch (e) {
-      console.error(e);
+      logError('Rovo action', e);
       return { error: e?.message ?? String(e) };
     }
   };

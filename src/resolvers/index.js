@@ -14,6 +14,7 @@ import { requireProjectAccess, listAttachments } from '../jira.js';
 import { seedDemo, resetPeriod, DEMO_PEOPLE } from '../demo.js';
 import { previousPeriod, assertPeriod } from '../lib/period.js';
 import { parseAmount } from '../lib/money.js';
+import { logError } from '../lib/log.js';
 
 const resolver = new Resolver();
 
@@ -22,7 +23,7 @@ function safe(fn) {
     try {
       return { ok: true, data: await fn(req) };
     } catch (e) {
-      console.error(e);
+      logError('resolver', e);
       return { ok: false, error: e?.message ?? String(e) };
     }
   };
